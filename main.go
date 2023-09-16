@@ -1,9 +1,22 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
-	fmt.Println("Hello world :)")
-	fmt.Println("Começando minha biblioteca de migrations")
-	fmt.Println("teste de versionamento")
+
+	filename := FileName{
+		name: os.Args[1],
+	}
+
+	readRes, err := ReadFile(filename.name)
+	if err != nil {
+		fmt.Printf("Erro ao ler o arquivo %s", err)
+		os.Exit(1)
+	}
+
+	fmt.Println(readRes)
+
 }

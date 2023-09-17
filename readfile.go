@@ -67,7 +67,8 @@ func createMigrationFile(cmds []string) error {
 		}
 
 		defer func() {
-			fmt.Println("Arquivo criado com sucesso :D")
+			fmt.Println(FmtGreen("Arquivo criado com sucesso :D"))
+			// fmt.Println(string("\033[34m"), "Arquivo criado com sucesso :D", string("\033[0m"))
 			file.Close()
 		}()
 	}()

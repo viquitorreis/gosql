@@ -42,15 +42,25 @@ func getDirFilenames() ([]string, error) {
 	return filename.name, nil
 }
 
-func createMigrationFile(cmds []string) error {
-	// validação dos arquivos - prefix
+func getMigrationsLastFile() (string, error) {
 	filenames, err := getDirFilenames()
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		fmt.Println(FmtRed(err.Error()))
+		return "", nil
 	}
 
 	lastFile := filenames[len(filenames)-1]
+	return lastFile, nil
+}
+
+func createMigrationFile(cmds []string) error {
+	// validação dos arquivos - prefix
+	lastFile, err := getMigrationsLastFile()
+	if err != nil {
+		fmt.Println(FmtRed(err.Error()))
+		return nil
+	}
+
 	lfPrefix := lastFile[:4]
 	intLfPrefix, err := strconv.Atoi(lfPrefix)
 	if err != nil {
@@ -68,7 +78,6 @@ func createMigrationFile(cmds []string) error {
 
 		defer func() {
 			fmt.Println(FmtGreen("Arquivo criado com sucesso :D"))
-			// fmt.Println(string("\033[34m"), "Arquivo criado com sucesso :D", string("\033[0m"))
 			file.Close()
 		}()
 	}()
@@ -78,12 +87,44 @@ func createMigrationFile(cmds []string) error {
 	return nil
 }
 
+func readMigrationFile() {
+	fmt.Println("Called out just like that :b")
+
+	filename, err := getMigrationsLastFile()
+	filename = "./database/migrations/" + filename
+	if err != nil {
+		fmt.Println(FmtRed("Error trying to GET the migration file"), err)
+		return
+	}
+
+	// f, err := os.Open("./database/migrations" + filename)
+	// if err != nil {
+	// 	fmt.Println(FmtRed("Error trying to OPENING the migration file"), err)
+	// 	return
+	// }
+	// defer f.Close()
+
+	// buf := make([]byte, 8)
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Println(FmtRed("Error trying to READ the migration file"), err)
+		return
+	}
+	fmt.Println(string(data))
+}
+
 func GosqlCmd(cmds []string) {
 
 	if cmds[0] != "gosql" {
 		return
 	}
 
+	cmds = cmds[0:]
+	// fmt.Println("cmds => ", len(cmds[1:]))
+	if len(cmds[1:]) == 0 {
+		fmt.Println(FmtRed("Gosql needs arguments in order to work"))
+		return
+	}
 	command := &Comands{}
 	for i, cmd := range cmds {
 		if i != 0 {
@@ -95,10 +136,19 @@ func GosqlCmd(cmds []string) {
 }
 
 func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes aq
+	fmt.Println("comands => ", cmds)
 	for _, cmd := range cmds {
-		if cmd == "new" {
-			fmt.Println("test")
+		switch cmd {
+		case "new":
 			createMigrationFile(cmds)
+
+		case "up":
+			readMigrationFile()
+
+		default:
+			fmt.Println(FmtRed("Command not found :("))
+
 		}
+
 	}
 }

@@ -18,16 +18,14 @@ func main() {
 
 	// fmt.Println(readRes)
 
-	filenames, err := getDirFilenames()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Printf("%+v\n", filenames)
+	// filenames, err := getDirFilenames()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// fmt.Printf("%+v\n", filenames)
 
 	fmt.Println("args em main.go => ", os.Args[1:])
 
 	GosqlCmd(os.Args[1:])
-
-	fmt.Println("teste")
 }

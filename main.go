@@ -28,4 +28,6 @@ func main() {
 	fmt.Println("args em main.go => ", os.Args[1:])
 
 	GosqlCmd(os.Args[1:])
+
+	fmt.Println("teste")
 }

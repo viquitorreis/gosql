@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 // "fmt"
 // "os"
@@ -17,10 +20,12 @@ func main() {
 
 	filenames, err := getDirFilenames()
 	if err != nil {
-		println(err)
+		fmt.Println(err)
 		return
 	}
-	fmt.Println(len(filenames))
 	fmt.Printf("%+v\n", filenames)
 
+	fmt.Println("args em main.go => ", os.Args[1:])
+
+	GosqlCmd(os.Args[1:])
 }

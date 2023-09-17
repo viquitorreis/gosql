@@ -1,22 +1,26 @@
 package main
 
-import (
-	"fmt"
-	"os"
-)
+import "fmt"
+
+// "fmt"
+// "os"
 
 func main() {
 
-	filename := FileName{
-		name: os.Args[1],
-	}
+	// readRes, err := ReadFile()
+	// if err != nil {
+	// 	fmt.Printf("Erro ao ler o arquivo %s", err)
+	// 	os.Exit(1)
+	// }
 
-	readRes, err := ReadFile(filename.name)
+	// fmt.Println(readRes)
+
+	filenames, err := getDirFilenames()
 	if err != nil {
-		fmt.Printf("Erro ao ler o arquivo %s", err)
-		os.Exit(1)
+		println(err)
+		return
 	}
-
-	fmt.Println(readRes)
+	fmt.Println(len(filenames))
+	fmt.Printf("%+v\n", filenames)
 
 }

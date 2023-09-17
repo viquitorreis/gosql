@@ -1,5 +1,5 @@
 package main
 
 type FileName struct {
-	name string
+	name []string
 }

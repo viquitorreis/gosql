@@ -25,7 +25,7 @@ import (
 // }
 
 func getDirFilenames() ([]string, error) {
-	files, err := os.ReadDir("./database/migrations")
+	files, err := os.ReadDir("./gosql/migrations")
 	if err != nil {
 		fmt.Println("Erro ao ler diretórios: ", err)
 		return nil, nil
@@ -73,7 +73,7 @@ func createMigrationFile(cmds []string) error {
 
 	func() {
 		newPrefix := fmt.Sprintf("%04d", intLfPrefix+1)
-		filename := "./database/migrations/" + newPrefix + "_" + cmds[1] // ARRUMAR => NOME VAI SER OQ VEM DPS DO "NEW"
+		filename := "./gosql/migrations/" + newPrefix + "_" + cmds[1] // ARRUMAR => NOME VAI SER OQ VEM DPS DO "NEW"
 		file, err := os.Create(filename)
 		if err != nil {
 			fmt.Println(err)
@@ -92,7 +92,7 @@ func createMigrationFile(cmds []string) error {
 
 func readMigrationFile() {
 	filename, err := getMigrationsLastFile()
-	filename = "./database/migrations/" + filename
+	filename = "./gosql/migrations/" + filename
 	if err != nil {
 		fmt.Println(FmtRed("Error trying to GET the migration file"), err)
 		return

@@ -1,10 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"os"
-)
-
 // "fmt"
 // "os"
 
@@ -25,7 +20,8 @@ func main() {
 	// }
 	// fmt.Printf("%+v\n", filenames)
 
-	fmt.Println("args em main.go => ", os.Args[1:])
+	// fmt.Println("args em main.go => ", os.Args[1:])
+	NewPostgresStore()
 
-	GosqlCmd(os.Args[1:])
+	// GosqlCmd(os.Args[1:])
 }

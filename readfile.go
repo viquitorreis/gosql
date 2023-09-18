@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	_ "reflect"
 	"strconv"
+	"strings"
 )
 
 // func ReadFile(f *FileName) (string, error) {
@@ -70,7 +73,7 @@ func createMigrationFile(cmds []string) error {
 
 	func() {
 		newPrefix := fmt.Sprintf("%04d", intLfPrefix+1)
-		filename := "./database/migrations/" + newPrefix + "." + cmds[1] // ARRUMAR => NOME VAI SER OQ VEM DPS DO "NEW"
+		filename := "./database/migrations/" + newPrefix + "_" + cmds[1] // ARRUMAR => NOME VAI SER OQ VEM DPS DO "NEW"
 		file, err := os.Create(filename)
 		if err != nil {
 			fmt.Println(err)
@@ -82,14 +85,12 @@ func createMigrationFile(cmds []string) error {
 		}()
 	}()
 
-	fmt.Println(cmds)
+	// fmt.Println(cmds)
 
 	return nil
 }
 
 func readMigrationFile() {
-	fmt.Println("Called out just like that :b")
-
 	filename, err := getMigrationsLastFile()
 	filename = "./database/migrations/" + filename
 	if err != nil {
@@ -97,20 +98,87 @@ func readMigrationFile() {
 		return
 	}
 
-	// f, err := os.Open("./database/migrations" + filename)
-	// if err != nil {
-	// 	fmt.Println(FmtRed("Error trying to OPENING the migration file"), err)
-	// 	return
-	// }
-	// defer f.Close()
-
-	// buf := make([]byte, 8)
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Println(FmtRed("Error trying to READ the migration file"), err)
 		return
 	}
-	fmt.Println(string(data))
+	dat := string(data)
+	fileByLines := getFileByLines(dat)
+	if err := validateFileLines(fileByLines); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	validateMigrationCmd(fileByLines)
+	// fmt.Println(len(fileByLines))
+}
+
+func getFileByLines(data string) []string {
+	return strings.Split(data, "\n")
+}
+
+func validateFileLines(data []string) error {
+	// fmt.Println(len(data))
+	if string(data[0][0]) != "-" || string(data[0][1]) != "-" {
+		return errors.New(FmtRed("Files must start with --"))
+	}
+
+	return nil
+}
+
+// func getFileCommands(data []string) {
+
+// }
+
+func validateMigrationCmd(data []string) {
+
+	numLine, err := getCmdsLines(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if len(numLine) > 2 {
+		return
+	}
+	upMigration := strings.Join(data[numLine[0]+1:numLine[1]-1], "")
+	downMigration := strings.Join(data[numLine[1]+1:], "")
+	fmt.Println("upCmd =>", upMigration)
+	fmt.Println("downCmd =>", downMigration)
+}
+
+func getCmdsLines(data []string) ([]int, error) {
+	lines := []int{}
+	for i, line := range data {
+		if string(line) != "" {
+
+			if i == 0 && len(line) >= 11 && line[:11] != "-- gosql Up" {
+				return lines, errors.New(FmtRed("Migration files must start with '-- gosql Up'") + "\nReceived => '" + line + "'")
+			} else if i == 0 && len(line) >= 11 && line[:11] == "-- gosql Up" {
+				lines = append(lines, i)
+			}
+
+			if i != 0 && string(line[0]) == "-" && string(line[1]) == "-" {
+				// fmt.Println(string(line))
+				if i == 0 && line[:13] != "-- gosql Down" {
+					return lines, errors.New(FmtRed("Migration down command must start with '-- gosql Down'") + "\nReceived => '" + line + "'")
+				} else {
+					lines = append(lines, i)
+				}
+			}
+
+		}
+
+	}
+
+	if len(lines) > 2 {
+		return lines, errors.New(FmtRed("Migration file have more than 2 command lines"))
+	}
+
+	if len(lines) < 2 {
+		return lines, errors.New(FmtRed("Migration file have less than 2 command lines. Up and Down commands needed"))
+	}
+
+	return lines, nil
 }
 
 func GosqlCmd(cmds []string) {
@@ -120,7 +188,6 @@ func GosqlCmd(cmds []string) {
 	}
 
 	cmds = cmds[0:]
-	// fmt.Println("cmds => ", len(cmds[1:]))
 	if len(cmds[1:]) == 0 {
 		fmt.Println(FmtRed("Gosql needs arguments in order to work"))
 		return
@@ -139,7 +206,7 @@ func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes a
 	fmt.Println("comands => ", cmds)
 	for _, cmd := range cmds {
 		switch cmd {
-		case "new":
+		case "new": // ESPECIFICAR O COMANDO "MIGRATION" APÓS O NEW OU SEI LA
 			createMigrationFile(cmds)
 
 		case "up":

@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+type MigrationBridge struct {
+	store Storage
+}
+
 // func ReadFile(f *FileName) (string, error) {
 // 	// filename := FileName{
 // 	// 	name: os.Args[1],
@@ -90,7 +94,7 @@ func createMigrationFile(cmds []string) error {
 	return nil
 }
 
-func readMigrationFile() {
+func readMigrationFile(cmd string) {
 	filename, err := getMigrationsLastFile()
 	filename = "./gosql/migrations/" + filename
 	if err != nil {
@@ -110,8 +114,21 @@ func readMigrationFile() {
 		return
 	}
 
-	validateMigrationCmd(fileByLines)
-	// fmt.Println(len(fileByLines))
+	// bridge := MigrationBridge{ storage: PostgresStore{
+	// 	choice: "",
+	// 	query: "",
+	//  } }
+	// fmt.Println("migration file called")
+	// bridge := &MigrationBridge{}
+	// br := bridge.store.RunMigration(<--- response from runMigration ---->)
+	// b := bridge.(*MigrationBody)
+	// bridge.runMigration(fileByLines, cmd)
+	st := new(PostgresStore)
+	mg := MigrationBridge{store: &PostgresStore{
+		db: st.db,
+	}}
+	mg.runMigration(fileByLines, cmd)
+
 }
 
 func getFileByLines(data string) []string {
@@ -131,19 +148,46 @@ func validateFileLines(data []string) error {
 
 // }
 
-func validateMigrationCmd(data []string) {
+func (mg *MigrationBridge) runMigration(data []string, m string) error {
 
 	numLine, err := getCmdsLines(data)
 	if err != nil {
 		fmt.Println(err)
 	}
 	if len(numLine) > 2 {
-		return
+		return err
 	}
+
 	upMigration := strings.Join(data[numLine[0]+1:numLine[1]-1], "")
 	downMigration := strings.Join(data[numLine[1]+1:], "")
-	fmt.Println("upCmd =>", upMigration)
-	fmt.Println("downCmd =>", downMigration)
+
+	if m == "up" {
+		ch := &MigrationBody{
+			choice: m,
+			query:  upMigration,
+		}
+		err := mg.store.RunMigration(ch)
+		if err != nil {
+			return errors.New(FmtRed("Error trying to run up migration => ") + err.Error())
+		}
+
+		return err
+	}
+
+	if m == "down" {
+		ch := &MigrationBody{
+			choice: m,
+			query:  downMigration,
+		}
+		err := mg.store.RunMigration(ch)
+		if err != nil {
+			return errors.New(FmtRed("Error trying to run down migration => ") + err.Error())
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func getCmdsLines(data []string) ([]int, error) {
@@ -210,7 +254,11 @@ func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes a
 			createMigrationFile(cmds)
 
 		case "up":
-			readMigrationFile()
+			fmt.Println("called")
+			readMigrationFile("up")
+
+		case "down":
+			readMigrationFile("down")
 
 		default:
 			fmt.Println(FmtRed("Command not found :("))

@@ -11,8 +11,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type Storage interface {
+	RunMigration(*MigrationBody) error
+}
 type PostgresStore struct {
 	db *sql.DB
+}
+
+type MigrationBody struct {
+	choice string
+	query  string
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
@@ -34,4 +42,16 @@ func NewPostgresStore() (*PostgresStore, error) {
 	return &PostgresStore{
 		db: db,
 	}, nil
+}
+
+func (s *PostgresStore) RunMigration(m *MigrationBody) error {
+
+	_, err := s.db.Exec(m.query)
+	if err != nil {
+		// errors.New(FmtRed("Error trying to run query => ") + err.Error())
+		log.Fatal(FmtRed("Error trying to run query => ") + err.Error())
+		return err
+	}
+	fmt.Println(FmtGreen("Migration done!"))
+	return nil
 }

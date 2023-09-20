@@ -38,7 +38,7 @@ func NewPostgresStore() (*PostgresStore, error) {
 		return nil, errors.New(FmtRed("Error") + err.Error())
 	}
 
-	fmt.Println("connected")
+	fmt.Println("Connected to DB!")
 	return &PostgresStore{
 		db: db,
 	}, nil

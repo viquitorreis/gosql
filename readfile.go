@@ -114,16 +114,11 @@ func readMigrationFile(cmd string) {
 		return
 	}
 
-	// bridge := MigrationBridge{ storage: PostgresStore{
-	// 	choice: "",
-	// 	query: "",
-	//  } }
-	// fmt.Println("migration file called")
-	// bridge := &MigrationBridge{}
-	// br := bridge.store.RunMigration(<--- response from runMigration ---->)
-	// b := bridge.(*MigrationBody)
-	// bridge.runMigration(fileByLines, cmd)
-	st := new(PostgresStore)
+	st, err := NewPostgresStore()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	mg := MigrationBridge{store: &PostgresStore{
 		db: st.db,
 	}}
@@ -254,7 +249,6 @@ func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes a
 			createMigrationFile(cmds)
 
 		case "up":
-			fmt.Println("called")
 			readMigrationFile("up")
 
 		case "down":

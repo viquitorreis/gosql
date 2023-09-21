@@ -19,8 +19,7 @@ type PostgresStore struct {
 }
 
 type MigrationBody struct {
-	choice string
-	query  string
+	query string
 }
 
 func NewPostgresStore() (*PostgresStore, error) {

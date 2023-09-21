@@ -6,5 +6,5 @@ CREATE TABLE users (
     name TEXT NOT NULL
 );
 
--- asdasda 
+-- gosql Down 
 DROP TABLE "users";

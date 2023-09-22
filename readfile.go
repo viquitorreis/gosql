@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
-	_ "reflect"
 	"strconv"
 	"strings"
 )
@@ -28,6 +28,8 @@ type MigrationBridge struct {
 // 	return fileContent, nil
 // }
 
+/// VALIDAR EXTENSAO DOS ARQUIVOS NO DIRETORIO DE DESTINO SEPARADAMENTE
+
 func getDirFilenames() ([]string, error) {
 	files, err := os.ReadDir("./gosql/migrations")
 	if err != nil {
@@ -35,29 +37,43 @@ func getDirFilenames() ([]string, error) {
 	}
 
 	filename := &FileName{}
-	for _, file := range files {
+	filesPrefix := []int{}
+	for i, file := range files {
 		fileExt := file.Name()[len(file.Name())-4:]
+		intPrefix, _ := strconv.Atoi(file.Name()[:4])
+		if i > 0 && intPrefix-1 != filesPrefix[i-1] {
+			fmt.Println("File isnt in sequential ordering =>", filesPrefix[i-1])
+			log.Fatal(FmtRed("Files must have a sequencial ordering name. If you want gosql to reorder all your files run ")) // ============================== precisa retornar o erro
+		}
+		filesPrefix = append(filesPrefix, intPrefix)
 		if fileExt == ".sql" {
 			filename.name = append(filename.name, file.Name())
 		} else {
-			return nil, errors.New("Only .sql files are supported: " + file.Name())
+			log.Fatal(errors.New(FmtRed("Only .sql files are supported: " + file.Name())))
 		}
 	}
 
 	return filename.name, nil
+
 }
+
 func getMigrationsLastFile() (string, error) {
 	filenames, err := getDirFilenames()
 	if err != nil {
-		return "", errors.New((FmtRed("Error trying to get last migration file") + err.Error()))
+		return "", err
+		// return "", errors.New((FmtRed("Error trying to get last migration file") + err.Error()))
 	}
-
 	lastFile := filenames[len(filenames)-1]
 	return lastFile, nil
 }
 
+// func reorderUserFiles(file []string) bool {
+
+// }
+
 func createMigrationFile(cmds []string) error {
 	// validação dos arquivos - prefix
+	fmt.Println(cmds)
 	lastFile, err := getMigrationsLastFile()
 	if err != nil {
 		return err
@@ -70,10 +86,10 @@ func createMigrationFile(cmds []string) error {
 
 	func() {
 		newPrefix := fmt.Sprintf("%04d", intLfPrefix+1)
-		filename := "./gosql/migrations/" + newPrefix + "_" + cmds[1] // ARRUMAR => NOME VAI SER OQ VEM DPS DO "NEW"
+		filename := "./gosql/migrations/" + newPrefix + "." + cmds[1] + ".sql" // ARRUMAR => NOME VAI SER OQ VEM DPS DO "NEW"
 		file, err := os.Create(filename)
 		if err != nil {
-			fmt.Println(FmtRed("Errors trying to create file: " + err.Error()))
+			fmt.Println(FmtRed("Error trying to create file: " + err.Error()))
 			return
 		}
 
@@ -97,6 +113,7 @@ func getFileByPrefix(prefix string) string {
 			return file
 		}
 	}
+
 	return ""
 
 }
@@ -159,7 +176,6 @@ func getFileByLines(data string) []string {
 }
 
 func validateFileLines(data []string) error {
-	// fmt.Println(len(data))
 	if string(data[0][0]) != "-" || string(data[0][1]) != "-" {
 		return errors.New(FmtRed("Files must start with --"))
 	}
@@ -167,17 +183,10 @@ func validateFileLines(data []string) error {
 	return nil
 }
 
-// FUNC runMigration está =>
-// PEGANDO COMANDO UP NO ARQUIVO SQL
-// PEGANDO COMANDO DOWN NO ARQUIVO SQL
-// RODANDO MIGRATION UP
-// RODANDO MIGRATION DOWN
-
 func runDesiredMigrationSqlCmd(data []string, mtype string) error {
 
 	st, err := NewPostgresStore()
 	if err != nil {
-		// fmt.Println(err)
 		return err
 	}
 	mg := MigrationBridge{store: &PostgresStore{
@@ -303,11 +312,9 @@ func GosqlCmd(cmds []string) {
 }
 
 func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes aq
-	fmt.Println("comands => ", cmds)
 	switch cmds[0] {
-	case "new": // ESPECIFICAR O COMANDO "MIGRATION" APÓS O NEW OU SEI LA
-		createMigrationFile(cmds)
-
+	case "new":
+		handleNewCmd(cmds[1:])
 	case "migration":
 		handleMigrationCmd(cmds)
 
@@ -316,6 +323,29 @@ func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes a
 
 	}
 
+}
+
+func handleNewCmd(cmds []string) {
+
+	if len(cmds) == 0 {
+		fmt.Println(FmtRed("Not enough parameters to run new command. Run 'gosql new --help'"))
+		return
+	}
+
+	for _, cmd := range cmds {
+		switch cmd {
+		case "migration":
+			createMigrationFile(cmds)
+			return
+
+		case "query":
+			fmt.Println("Not yet implemented")
+
+		default:
+			fmt.Println(FmtRed("Command not found. Run 'gosql new --help'\n")+"Received:", cmd)
+		}
+
+	}
 }
 
 func handleMigrationCmd(cmds []string) {
@@ -330,6 +360,7 @@ func handleMigrationCmd(cmds []string) {
 
 			// default:
 			// 	fmt.Println(FmtRed("Type of migration is wrong :("), cmd)
+
 		}
 	}
 }

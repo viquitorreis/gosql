@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -22,22 +21,22 @@ type MigrationBody struct {
 	query string
 }
 
-func NewPostgresStore() (*PostgresStore, error) {
+func NewPostgresStore() (*PostgresStore, error) { // -------------------- TRATAR MELHOR ERROS
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("An error occurred. Err: %s", err)
+		return nil, errors.New(FmtRed("Error trying to read .env file") + err.Error())
 	}
 	connStr := os.Getenv("CONN_STR")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, errors.New(FmtRed("Error") + err.Error())
+		return nil, errors.New(FmtRed("Error trying to stablish database connection") + err.Error())
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, errors.New(FmtRed("Error") + err.Error())
+		return nil, errors.New(FmtRed("Error, connection to database may no be online") + err.Error())
 	}
 
-	fmt.Println("Connected to DB!")
+	fmt.Println(FmtGreen("Connected to DB!"))
 	return &PostgresStore{
 		db: db,
 	}, nil
@@ -47,9 +46,7 @@ func (s *PostgresStore) RunMigration(m *MigrationBody) error {
 
 	_, err := s.db.Exec(m.query)
 	if err != nil {
-		// errors.New(FmtRed("Error trying to run query => ") + err.Error())
-		log.Fatal(FmtRed("Error trying to run query => ") + err.Error())
-		return err
+		return errors.New(FmtRed("Error trying to run query => ") + err.Error())
 	}
 	fmt.Println(FmtGreen("Migration done!"))
 	return nil

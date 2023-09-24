@@ -3,3 +3,6 @@ build:
 
 run: build
 	@./bin/go-migrations
+
+renamefs:
+	@./sh-testing-cmds/.bs-renamefs.sh

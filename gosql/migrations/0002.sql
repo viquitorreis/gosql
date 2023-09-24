@@ -1,10 +1,3 @@
--- gosql Up
-CREATE TABLE testando (
-    id UUID PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
-    name TEXT NOT NULL
-);
+-- testando
 
--- gosql Down 
-DROP TABLE "testando";
+xd

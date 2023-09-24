@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -30,10 +31,10 @@ type MigrationBridge struct {
 
 /// VALIDAR EXTENSAO DOS ARQUIVOS NO DIRETORIO DE DESTINO SEPARADAMENTE
 
-func getDirFilenames() ([]string, error) {
+func getDirFilenames(reorder ...bool) ([]string, []int, error) {
 	files, err := os.ReadDir("./gosql/migrations")
 	if err != nil {
-		return nil, errors.New("Errors trying to read migrations directory")
+		return nil, nil, errors.New("Errors trying to read migrations directory")
 	}
 
 	filename := &FileName{}
@@ -41,9 +42,10 @@ func getDirFilenames() ([]string, error) {
 	for i, file := range files {
 		fileExt := file.Name()[len(file.Name())-4:]
 		intPrefix, _ := strconv.Atoi(file.Name()[:4])
-		if i > 0 && intPrefix-1 != filesPrefix[i-1] {
+
+		if i > 0 && len(reorder) == 0 && intPrefix-1 != filesPrefix[i-1] {
 			fmt.Println("File isnt in sequential ordering =>", filesPrefix[i-1])
-			log.Fatal(FmtRed("Files must have a sequencial ordering name. If you want gosql to reorder all your files run ")) // ============================== precisa retornar o erro
+			log.Fatal(FmtRed("\nFiles must have a sequencial ordering name. If you want gosql to reorder all your files run 'gosql new reorder'")) // ============================== precisa retornar o erro
 		}
 		filesPrefix = append(filesPrefix, intPrefix)
 		if fileExt == ".sql" {
@@ -53,12 +55,12 @@ func getDirFilenames() ([]string, error) {
 		}
 	}
 
-	return filename.name, nil
+	return filename.name, filesPrefix, nil
 
 }
 
 func getMigrationsLastFile() (string, error) {
-	filenames, err := getDirFilenames()
+	filenames, _, err := getDirFilenames()
 	if err != nil {
 		return "", err
 		// return "", errors.New((FmtRed("Error trying to get last migration file") + err.Error()))
@@ -67,9 +69,53 @@ func getMigrationsLastFile() (string, error) {
 	return lastFile, nil
 }
 
-// func reorderUserFiles(file []string) bool {
+func reorderUserFiles() {
+	files, prefixes, _ := getDirFilenames(true)
+	lowestWrongIdx := 0
 
-// }
+	var rnm func(oldFile, newFile string) error
+	rnm = func(oldFile, newFile string) error {
+		err := os.Rename(oldFile, newFile)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		} else {
+			fmt.Println(FmtGreen("File successfully renamed"))
+			reorderUserFiles()
+		}
+		return nil
+	}
+	for i, file := range files {
+
+		absFname, _ := filepath.Abs(file)
+		idxBeginFile := strings.LastIndex(absFname, "/")
+		newFileName := absFname[:idxBeginFile] + "/gosql/migrations/"
+		oldFileName := absFname[:idxBeginFile] + "/gosql/migrations/" + fmt.Sprintf("%04d", prefixes[i]) + file[4:]
+
+		if i == 0 {
+			fmt.Println("file => ", file)
+			if file[:4] != "0001" {
+				fmt.Println(absFname)
+				newFileName += fmt.Sprintf("%04d", 0001) + file[4:]
+				rnm(oldFileName, newFileName)
+				continue
+			}
+		}
+
+		if i > 0 && prefixes[i] > 0 && prefixes[i] != prefixes[i-1]+1 && lowestWrongIdx < len(files) {
+			fmt.Println("File is different", prefixes[i])
+
+			fmt.Println("absFilename =>", absFname)
+			newFileName += fmt.Sprintf("%04d", prefixes[i-1]+1) + file[4:]
+			lowestWrongIdx = prefixes[i]
+			fmt.Println("prefixes[i]=>", prefixes[i])
+			fmt.Println("oldFileName =>", oldFileName)
+			i = prefixes[i-1] + 1
+			fmt.Println("nfName => ", newFileName)
+			rnm(oldFileName, newFileName)
+		}
+	}
+}
 
 func createMigrationFile(cmds []string) error {
 	// validação dos arquivos - prefix
@@ -103,7 +149,7 @@ func createMigrationFile(cmds []string) error {
 }
 
 func getFileByPrefix(prefix string) string {
-	files, err := getDirFilenames()
+	files, _, err := getDirFilenames()
 	if err != nil {
 		return err.Error()
 	}
@@ -340,6 +386,9 @@ func handleNewCmd(cmds []string) {
 
 		case "query":
 			fmt.Println("Not yet implemented")
+
+		case "reorder":
+			reorderUserFiles()
 
 		default:
 			fmt.Println(FmtRed("Command not found. Run 'gosql new --help'\n")+"Received:", cmd)

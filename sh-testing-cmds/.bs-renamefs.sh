@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Diretório onde estão os arquivos
-diretorio="/home/victor/Projetos/golang/go-migrations/gosql/migrations"
+diretorio="../gosql/migrations"
 
 # Número inicial para renomear
 numero_inicial=10

@@ -7,3 +7,7 @@ func FmtGreen(s string) string {
 func FmtRed(s string) string {
 	return string("\033[31m") + s + string("\033[0m")
 }
+
+func FmtYellow(s string) string {
+	return string("\033[33m ") + s + string("\033[0m")
+}

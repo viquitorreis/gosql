@@ -82,6 +82,10 @@ func getDirFilenames(reorder ...bool) ([]string, []int, error) {
 			return nil, nil, errors.New("Errors trying to read migrations directory")
 		}
 
+		if len(files) == 0 {
+			return nil, nil, nil
+		}
+
 		filename := &FileName{}
 		filesPrefix := []int{}
 		for i, file := range files {
@@ -155,8 +159,6 @@ func reorderUserFiles() {
 }
 
 func createMigrationFile(cmds []string) error {
-	// validação dos arquivos - prefix
-	fmt.Println(cmds)
 	lastFile, err := getMigrationsLastFile()
 	if err != nil {
 		return err
@@ -332,9 +334,6 @@ func (mg *MigrationBridge) runMigration(query string) error {
 	// 		return errors.New(FmtRed("Error trying to run down migration => ") + err.Error())
 	// 	}
 
-	// 	return err
-	// }
-
 	return nil
 }
 
@@ -394,7 +393,7 @@ func GosqlCmd(cmds []string) {
 }
 
 func handleGosqlHelperCmds() {
-	fmt.Println("Gosql commands:\n\nGosql new\nGosql migration")
+	fmt.Println("gosql commands:\n\ngosql new\ngosql migration")
 }
 
 func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes aq
@@ -411,6 +410,10 @@ func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes a
 
 	}
 
+}
+
+func handleNewHelperCmds() {
+	fmt.Println("gosql new commands:\n\ngosql new migration\ngosql new reorder")
 }
 
 func handleNewCmd(cmds []string) {
@@ -432,6 +435,9 @@ func handleNewCmd(cmds []string) {
 		case "reorder":
 			reorderUserFiles()
 
+		case "--help":
+			handleNewHelperCmds()
+
 		default:
 			fmt.Println(FmtRed("Command not found. Run 'gosql new --help'\n")+"Received:", cmd)
 		}
@@ -439,8 +445,11 @@ func handleNewCmd(cmds []string) {
 	}
 }
 
+func handleMigrationHelperCmds() {
+	fmt.Println("gosql migration commands:\n\ngosql migration up <fileprefix_optional>\ngosql migration down <fileprefix_optional>")
+}
+
 func handleMigrationCmd(cmds []string) {
-	fmt.Println("called handle migration")
 	for _, cmd := range cmds {
 		switch cmd {
 		case "up":
@@ -448,6 +457,9 @@ func handleMigrationCmd(cmds []string) {
 
 		case "down":
 			targetMigrationFile(cmds)
+
+		case "--help":
+			handleMigrationHelperCmds()
 
 			// default:
 			// 	fmt.Println(FmtRed("Type of migration is wrong :("), cmd)

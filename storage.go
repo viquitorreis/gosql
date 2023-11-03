@@ -22,7 +22,7 @@ type MigrationBody struct {
 }
 
 func NewPostgresStore() (*PostgresStore, error) { // -------------------- TRATAR MELHOR ERROS
-	err := godotenv.Load(".env")
+	err := godotenv.Load(".env") // PUXAR A FUNÇÃO CHECKUSERDBCONFIG
 	if err != nil {
 		return nil, errors.New(FmtRed("Error trying to read .env file") + err.Error())
 	}
@@ -50,4 +50,5 @@ func (s *PostgresStore) RunMigration(m *MigrationBody) error {
 	}
 	fmt.Println(FmtGreen("Migration done!"))
 	return nil
+
 }

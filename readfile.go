@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"log"
@@ -8,6 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 type MigrationBridge struct {
@@ -159,10 +162,12 @@ func reorderUserFiles() {
 }
 
 func createMigrationFile(cmds []string) error {
+	fmt.Println(cmds)
 	lastFile, err := getMigrationsLastFile()
 	if err != nil {
 		return err
 	}
+	fmt.Println("lf =>", lastFile)
 	lfPrefix := lastFile[:4]
 	intLfPrefix, err := strconv.Atoi(lfPrefix)
 	if err != nil {
@@ -371,6 +376,41 @@ func getCmdsLines(data []string) ([]int, error) {
 	return lines, nil
 }
 
+func checkUserDBConfig(start bool) error {
+	err := godotenv.Load(".env")
+	if err != nil {
+		return errors.New(FmtRed("Error trying to read .env file. Run 'gosql start'") + err.Error())
+	}
+	connStr := os.Getenv("CONN_STR")
+	fmt.Println("connStr => ", connStr)
+
+	if start {
+		configDBConnection()
+	} else {
+		if connStr == "" || len(connStr) == 0 {
+			return errors.New(FmtRed("Database connection not yet configured or found. Run 'gosql start'"))
+		}
+	}
+
+	return nil
+}
+
+func configDBConnection() {
+	fmt.Println("Please enter your database connection string:") // APONTAR PARA COMO FAZER ISSO EM UM HELPER OU DOCS OU AMBOS
+	reader := bufio.NewReader(os.Stdin)
+	connStr, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+	formattedConnStr := fmt.Sprintf(`CONN_STR="%s"`, connStr)
+	err = os.WriteFile(".env", []byte(formattedConnStr), 0660)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("DB connection string: %s\n", formattedConnStr)
+	fmt.Println(FmtGreen("String connection to database created!"))
+}
+
 func GosqlCmd(cmds []string) {
 
 	if cmds[0] != "gosql" {
@@ -382,22 +422,30 @@ func GosqlCmd(cmds []string) {
 		fmt.Println(FmtRed("Gosql needs arguments in order to work. Run 'gosql --help'"))
 		return
 	}
+
 	command := &Comands{}
 	for i, cmd := range cmds {
+		fmt.Println(cmds)
 		if i != 0 {
 			command.cmds = append(command.cmds, cmd)
 		}
 	}
 
+	fmt.Println("command.cmds =>", command.cmds)
+
 	handleGosqlCmds(command.cmds)
 }
 
 func handleGosqlHelperCmds() {
-	fmt.Println("gosql commands:\n\ngosql new\ngosql migration")
+	fmt.Println("gosql commands:\n\ngosql start\ngosql new\ngosql migration")
 }
 
 func handleGosqlCmds(cmds []string) { // criar interface para retornar funcoes aq
 	switch cmds[0] {
+	case "start":
+		if err := checkUserDBConfig(true); err != nil {
+			fmt.Println(err)
+		}
 	case "new":
 		handleNewCmd(cmds[1:])
 	case "migration":
